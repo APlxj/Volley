@@ -1,4 +1,4 @@
-package ap.com.volley;
+package com.android.volley.utils;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.DefaultRetryPolicy;
@@ -7,6 +7,7 @@ import com.android.volley.ParseError;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.toolbox.HttpHeaderParser;
+import com.android.volley.utils.VolleyListenerInterface;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,7 +20,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 /**
- * 类描述：
+ * 类描述：volley文件上传
  * 创建人：swallow.li
  * 创建时间：
  * Email: swallow.li@kemai.cn
@@ -32,17 +33,26 @@ public class PostUploadRequest extends Request<JSONObject> {
     private final String boundary = "--------------" + System.currentTimeMillis();
     private final String mimeType = "multipart/form-data;boundary=" + boundary;
     private Response.Listener<JSONObject> mListener;
-    private Map<String, String[]> fileMap;
+    private Map<String, String[]> params;
 
-    public PostUploadRequest(String url, Map<String, String[]> fileMap,
-                             Response.Listener<JSONObject> mListener,
-                             Response.ErrorListener listener) {
-        super(Method.POST, url, listener);
-        this.mListener = mListener;
-        this.fileMap = fileMap;
+    /**
+     * volley文件上传
+     * 参数：
+     *
+     * @param url                     上传路径
+     * @param params                  文件数据：Map<String:文件类型 ,String[]{文件路径,文件名称}>
+     * @param volleyListenerInterface 回调接口
+     */
+    public PostUploadRequest(String url, Map<String, String[]> params
+            , VolleyListenerInterface volleyListenerInterface) {
+
+        super(Method.POST, url, volleyListenerInterface.errorListener());
+        this.mListener = volleyListenerInterface.responseListener();
+        this.params = params;
         setShouldCache(false);
-        setRetryPolicy(new DefaultRetryPolicy(5000,
-                DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        //设置响应时间
+        setRetryPolicy(new DefaultRetryPolicy(5000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
     }
 
     @Override
@@ -85,9 +95,9 @@ public class PostUploadRequest extends Request<JSONObject> {
 
     private void buildFilePart(DataOutputStream ds) {
         StringBuilder sb = new StringBuilder();
-        Object[] key_arr = fileMap.keySet().toArray();
+        Object[] key_arr = params.keySet().toArray();
         for (Object name : key_arr) {
-            String[] val = fileMap.get(name.toString());
+            String[] val = params.get(name.toString());
             String path = val[0];
             String filename = val[1];
             try {
@@ -102,6 +112,8 @@ public class PostUploadRequest extends Request<JSONObject> {
                 sb.append("Content-Type: application/octet-stream;charset=UTF-8" + end);
                 sb.append(end);
                 ds.write(sb.toString().getBytes("UTF-8"));
+                //ds.write(formImage.getValue());//文件的二进制数据 + "\r\n"
+                //ds.write("\r\n".getBytes("utf-8"));
                 /* 取得文件的FileInputStream */
                 FileInputStream fStream = new FileInputStream(path);//path是文件本地地址
                 /* 设置每次写入1024bytes */

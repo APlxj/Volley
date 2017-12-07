@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 
+import org.json.JSONObject;
+
 /**
  * 类描述：
  * 创建人：swallow.li
@@ -14,6 +16,7 @@ import com.android.volley.VolleyError;
 public abstract class VolleyListenerInterface {
 
     public static Response.Listener<String> mListener;
+    public static Response.Listener<JSONObject> mFileListener;
     public static Response.ErrorListener mErrorListener;
 
     public VolleyListenerInterface() {
@@ -41,6 +44,20 @@ public abstract class VolleyListenerInterface {
             }
         };
         return mListener;
+    }
+
+    public Response.Listener<JSONObject> responseListener() {
+        mFileListener = new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject s) {
+                try {
+                    onSuccess(s);
+                } catch (Exception e) {
+                    onError(e);
+                }
+            }
+        };
+        return mFileListener;
     }
 
     // 创建请求失败的事件监听
